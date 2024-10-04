@@ -40,12 +40,14 @@ def WORD_arrumarAbreviacoes(tabela, index):
 def WORD_arrumarOS(tabela, totLinhas):
     countOS = 1
     for i in range(0, totLinhas):
-        if tabela.columns[4].cells[i].text != "Normal" and tabela.columns[4].cells[i].text != "" and tabela.columns[4].cells[i].text != "Parado":
-            tabela.columns[5].cells[i].text = WORD_arrumarCounts(countOS)
-            WORD_formatarCelula(tabela.columns[5].cells[i])
+        tabelaStatus = tabela.columns[4].cells[i]
+        tabelaOS = tabela.columns[5].cells[i] 
+        if tabelaStatus.text != "Normal" and tabelaStatus.text != "" and tabelaStatus.text != "Parado":
+            tabelaOS.text = WORD_arrumarCounts(countOS)
+            WORD_formatarCelula(tabelaOS)
             countOS += 1
         else:
-            tabela.columns[5].cells[i].text = ""
+            tabelaOS.text = ""
 
 def WORD_arrumarCounts(count):
     if count < 10:
@@ -163,5 +165,9 @@ def WORD_indentificarDefeito(documento, tabelasCount):
     
     return arrayStatusDefeitos
 
-
+def WORD_addGraficos(paragrafo, nm):
+    paragrafo.text = ''
+    paragrafo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    img = paragrafo.add_run()
+    img.add_picture(rf"{str(pathlib.Path().resolve())}\chart{nm}.png", width=Inches(4))
 

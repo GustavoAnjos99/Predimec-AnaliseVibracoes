@@ -5,8 +5,24 @@ from functions_EXCEL import *
 import os
 import pathlib
 from win32com.client import Dispatch
-from docx.shared import Inches
+import sys
+import time
 
+## Definição das Funções ===========
+def excluirImagensPATH(imagem):
+    if os.path.exists(imagem):
+        os.remove(imagem)
+
+def pegarGraficosExcel(app, workbook_file_name, workbook):
+    app.DisplayAlerts = False
+
+    for i, sheet in enumerate(workbook.Worksheets):
+        for chartObject in sheet.ChartObjects():
+            chartObject.Chart.Export(rf"{str(pathlib.Path().resolve())}\chart{str(i+1)}.png")
+            i +=1
+    workbook.Close(SaveChanges=False, Filename=workbook_file_name)
+
+## Inicialização do app ==========
 print(r"""
 ________            _____________                           __________  
 ___  __ \_________________  /__(_)______ _______________    ___  ___  \ 
@@ -16,22 +32,26 @@ _  ____/_  /   /  __/ /_/ / _  / _  / / / / /  __/ /__      _  / , _/ /
                                                              \______/   
 Iniciando processo de formatação...
       """)
+
 ARQUIVO_WORD = ''
 ARQUIVO_EXCEL = ''
 
-arquivos = os.listdir('./')
-for arquivo in arquivos:
-    if arquivo.endswith(".docx"):
-        ARQUIVO_WORD = arquivo
-    if arquivo.endswith(".xlsm") or arquivo.endswith(".xlsx"):
-        ARQUIVO_EXCEL = arquivo
+try: 
+    arquivos = os.listdir('./RELATÓRIOS NÃO-FORMATADOS')
+    for arquivo in arquivos:
+            ARQUIVO_WORD = arquivo if arquivo.endswith(".docx") else ''
+            ARQUIVO_EXCEL = arquivo if arquivo.endswith(".xlsm") or arquivo.endswith(".xlsx") else ''
+    f = open(ARQUIVO_WORD, 'rb')
+    g = open(ARQUIVO_EXCEL, 'rb')
+    documentoWord = Document(f)
+    documentoExcel = load_workbook(g)
+except:
+    print("ERRO: Erro ao identificar arquivos para formatação.")
+    time.sleep(10)
+    sys.exit(1)
+    
 
-f = open(ARQUIVO_WORD, 'rb')
-g = open(ARQUIVO_EXCEL, 'rb')
-documentoWord = Document(f)
-documentoExcel = load_workbook(g)
-
-## WORD ===================================================================================================================
+## WORD ==========
 tabela = documentoWord.tables[1]
 totLinhas = len(tabela.rows)
 totColunas = int(len(tabela.columns) - (len(tabela.columns) / 2))
@@ -51,7 +71,7 @@ for i in range(0, totColunas):
     WORD_arrumarAbreviacoes(tabela, i)
 WORD_arrumarOS(tabela, totLinhas)
 
-## EXCEL ==================================================================================================================
+## EXCEL ==========
 planilhaListagem = documentoExcel['Listagem']
 planilhaGraficos = documentoExcel['Gráficos']
 
@@ -60,7 +80,7 @@ arrumarTabela_2(planilhaGraficos, WORD_indentificarDefeito(documentoWord, tabela
 arrumarTabela_3(planilhaGraficos)
 
 
-## SALVAMENTO DO ARQUIVO ==================================================================================================
+## SALVAMENTO DO ARQUIVO ==========
 PASTA_RESULTADOS = "RELATÓRIOS FORMATADOS"
 os.makedirs(PASTA_RESULTADOS, exist_ok=True)
 
@@ -69,43 +89,29 @@ ARQUIVO_EXCEL = f"{teste[0]}.xlsx"
 caminhoWord = os.path.join(PASTA_RESULTADOS, ARQUIVO_WORD)
 caminhoExcel = os.path.join(PASTA_RESULTADOS, ARQUIVO_EXCEL)
 documentoExcel.save(caminhoExcel)
+try:
+    app = Dispatch("Excel.Application")
+    workbook_file_name = rf"{str(pathlib.Path().resolve())}\RELATÓRIOS FORMATADOS\{ARQUIVO_EXCEL}"
+    workbook = app.Workbooks.Open(Filename=workbook_file_name)
+    pegarGraficosExcel(app, workbook_file_name, workbook)
 
+    for i in documentoWord.paragraphs:
+        if i.text == "[gráfico1]":
+            WORD_addGraficos(i, 1)
+        if i.text == "[gráfico2]":
+            WORD_addGraficos(i, 2)
+        if i.text == "[gráfico3]":
+            WORD_addGraficos(i, 3)
+except:
+    print("ERRO: Erro ao inserir imagens dos gráficos do arquivo WORD.")
+    time.sleep(10)
+    sys.exit(1)
 
-app = Dispatch("Excel.Application")
-workbook_file_name = rf"{str(pathlib.Path().resolve())}\RELATÓRIOS FORMATADOS\{ARQUIVO_EXCEL}"
-workbook = app.Workbooks.Open(Filename=workbook_file_name)
-
-app.DisplayAlerts = False
-
-for i, sheet in enumerate(workbook.Worksheets):
-    for chartObject in sheet.ChartObjects():
-        chartObject.Chart.Export(rf"{str(pathlib.Path().resolve())}\chart{str(i+1)}.png")
-        i +=1
-workbook.Close(SaveChanges=False, Filename=workbook_file_name)
-
-for i in documentoWord.paragraphs:
-    if i.text == "[gráfico1]":
-        i.text = ''
-        i.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        img = i.add_run()
-        img.add_picture(rf"{str(pathlib.Path().resolve())}\chart1.png", width=Inches(4))
-    if i.text == "[gráfico2]":
-        i.text = ''
-        i.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        img = i.add_run()
-        img.add_picture(rf"{str(pathlib.Path().resolve())}\chart2.png", width=Inches(4))
-    if i.text == "[gráfico3]":
-        i.text = ''
-        i.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        img = i.add_run()
-        img.add_picture(rf"{str(pathlib.Path().resolve())}\chart3.png", width=Inches(4))
 documentoWord.save(caminhoWord)
 
-if os.path.exists("chart1.png"):
-  os.remove("chart1.png")
-if os.path.exists("chart2.png"):
-  os.remove("chart2.png")
-if os.path.exists("chart3.png"):
-  os.remove("chart3.png")
+excluirImagensPATH("chart1.png")
+excluirImagensPATH("chart2.png")
+excluirImagensPATH("chart3.png")
 
 print("\nArquivos formatados com sucesso!\n")
+time.sleep(10)
