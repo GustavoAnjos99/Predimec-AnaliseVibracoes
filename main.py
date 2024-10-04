@@ -7,6 +7,7 @@ import pathlib
 from win32com.client import Dispatch
 import sys
 import time
+import pathlib
 
 ## Definição das Funções ===========
 def excluirImagensPATH(imagem):
@@ -37,10 +38,12 @@ ARQUIVO_WORD = ''
 ARQUIVO_EXCEL = ''
 
 try: 
-    arquivos = os.listdir('./RELATÓRIOS NÃO-FORMATADOS')
+    arquivos = os.listdir('./')
     for arquivo in arquivos:
-            ARQUIVO_WORD = arquivo if arquivo.endswith(".docx") else ''
-            ARQUIVO_EXCEL = arquivo if arquivo.endswith(".xlsm") or arquivo.endswith(".xlsx") else ''
+        if arquivo.endswith(".docx"):
+            ARQUIVO_WORD = arquivo
+        if arquivo.endswith(".xlsm") or arquivo.endswith(".xlsx"):
+            ARQUIVO_EXCEL = arquivo
     f = open(ARQUIVO_WORD, 'rb')
     g = open(ARQUIVO_EXCEL, 'rb')
     documentoWord = Document(f)

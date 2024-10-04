@@ -3,6 +3,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 from datetime import date
+import pathlib
+from docx.shared import Inches
 ## VARIÁVEIS 
 
 equipamentos = {
