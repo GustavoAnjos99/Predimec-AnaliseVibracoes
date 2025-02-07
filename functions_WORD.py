@@ -9,18 +9,22 @@ from docx.shared import Inches
 
 equipamentos = {
     "EXT" : "Exaustor",
+    "EXAUSTOR": "Exaustor",
     "BMB" : "Bomba",
+    "BOMBA" : "Bomba",
     "FCL" : "Fan Coil",
     "VNT" : "Ventilador",
     "VENT" : "Ventilador",
+    "VENTILADOR": "Ventilador",
     "CX" : "Ventilador",
     "CHILLER": "Compressor",
+    "COMPRESSOR" : "Compressor",
     "FAN COIL": "Fan Coil",
     "BAGP" : "Bomba",
     "BAGS" : "Bomba"
 }
 
-defeitos = ["DESBALANCEAMENTO", "DESALINHAMENTO", "LUBRIFICAÇÃO", "ROLAMENTO", "BASE", "FOLGA", "FOLGAS"]
+defeitos = ["DESBALANCEAMENTO", "DESALINHAMENTO", "LUBRIFICAÇÃO", "ROLAMENTO", "BASE DANIFICADA", "FOLGA ", "FOLGAS"]
 
 ## FUNÇÕES
 
@@ -40,16 +44,18 @@ def WORD_arrumarAbreviacoes(tabela, index):
                     
 
 def WORD_arrumarOS(tabela, totLinhas):
+    print(f"🛠 -> Adicionando contagem na coluna de OS...")
     countOS = 1
     for i in range(0, totLinhas):
         tabelaStatus = tabela.columns[4].cells[i]
         tabelaOS = tabela.columns[5].cells[i] 
-        if tabelaStatus.text != "Normal" and tabelaStatus.text != "" and tabelaStatus.text != "Parado":
+        if tabelaStatus.text == "Aceitável" or tabelaStatus.text == "Alerta" or tabelaStatus.text == "Crítico":
             tabelaOS.text = WORD_arrumarCounts(countOS)
             WORD_formatarCelula(tabelaOS)
             countOS += 1
         else:
             tabelaOS.text = ""
+    print(f"✔ -> Contagem adicionada na coluna de OS")
 
 def WORD_arrumarCounts(count):
     if count < 10:
@@ -63,6 +69,7 @@ def WORD_retornarData():
     return datacorreta
     
 def WORD_arrumarTabelaOS_equipamento(documento, tabelasCount):
+    print(f"\n🛠 -> Formatando tabelas de OS...")
     countOS = 1
     for i in range(2, tabelasCount):
         if i%2 == 0 :
@@ -71,6 +78,7 @@ def WORD_arrumarTabelaOS_equipamento(documento, tabelasCount):
             WORD_formatarCelula(tabela.columns[3].cells[0])
             countOS += 1
             WORD_arrumarAbreviacoes(tabela, 4)
+    print(f"🛠 -> Tabelas de OS formatados!")
 
 def WORD_deletarColuna(documento, table, columns):
     table = documento.tables[table]
@@ -113,14 +121,6 @@ def WORD_formatarData(celula):
     shade_obj.set(qn('w:fill'), "#FFF2CC")
     table_cell_properties.append(shade_obj)    
 
-def WORD_verificarOS_titulo(documento):
-    temTitulo = False
-    for paragrafo in documento.paragraphs:
-        if temTitulo == True and paragrafo.text == "6.	 Ordens de serviço":
-            paragrafo.clear_content()
-        if temTitulo == False and paragrafo.text == "6.	 Ordens de serviço":
-            temTitulo = True
-
 def WORD_addCabecalhoVertical(tabela, totLinhas):
     for i in range(0, totLinhas):
         WORD_formatarCabecalho(tabela.columns[0].cells[i])
@@ -132,14 +132,20 @@ def WORD_colunaValores(tabela, index):
     return valores
 
 def WORD_arrumarEquipamentoTabela(tabela, totLinhas):
+    print(f"🛠 -> Arrumando conjuntos na tabela de listagem...")
     for i in range(0,totLinhas): 
         texto = tabela.columns[1].cells[i].text
-        arrayTexto = texto.split('.') if ("." in texto)  else texto.split('-')  
-        tabela.columns[2].cells[i].text = equipamentos[arrayTexto[0]] if (arrayTexto[0] in equipamentos) else arrayTexto[0].capitalize()
+        for chave, valor in equipamentos.items():
+            if chave in texto.upper():
+                tabela.columns[2].cells[i].text = valor
+            else: 
+                texto.split(" ")[0].capitalize()
         WORD_formatarCelula(tabela.columns[2].cells[i])
+    print(f"✔ -> Conjuntos na tabela de listagem arrumados!")
 
 
 def WORD_indentificarDefeito(documento, tabelasCount):
+    print(f"🛠 -> Identificando defeitos das OS...")
     statusArray = []
     defeitoArray = []
 
@@ -155,8 +161,8 @@ def WORD_indentificarDefeito(documento, tabelasCount):
             arraytemp = []
             for i in defeitos:
                 if i in texto:
-                    arraytemp.append(i)
-            if arraytemp == []:
+                    arraytemp.append("FOLGAS" if i == "FOLGA " else i)
+            if len(arraytemp) == 0:
                 arraytemp.append("OUTROS")
             defeitoArray.append(arraytemp)
             arraytemp = []
@@ -164,7 +170,8 @@ def WORD_indentificarDefeito(documento, tabelasCount):
     arrayStatusDefeitos = []
     for i in range(len(statusArray)):
         arrayStatusDefeitos.append([statusArray[i], defeitoArray[i]])
-    
+
+    print(f"✔ -> Defeitos identificados! (Enviando Excel)")
     return arrayStatusDefeitos
 
 def WORD_addGraficos(paragrafo, nm):

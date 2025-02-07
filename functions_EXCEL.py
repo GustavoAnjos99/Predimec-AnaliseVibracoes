@@ -2,44 +2,29 @@ from functions_WORD import WORD_retornarData
 import datetime
 
 def addColunaListagem(valores, pagina, pagina2):
+    print(f"🛠 -> Adicionando listagem ao EXCEL...")
     pagina.delete_cols(5)
     totalValores = len(valores)
     for i in range(0, totalValores):
         pagina[f"E{i+1}"].value = valores[i]
     pagina2['N12'] = ''
+    print(f"✔ -> Listagem adicionada ao EXCEL!")
 
-def arrumarTabela_2(pagina, valores):
-    for rows in pagina['N28:P34']:
-        for cell in rows:
-            cell.value = 0
-    for statusDefeito in valores:
-        linha = ''
-        coluna = ''
-        if statusDefeito[0] == "Aceitável":
-            coluna = "N"
-        elif statusDefeito[0] == "Alerta":
-            coluna = "O"
-        elif statusDefeito[0] == "Crítico":
-            coluna = "P"
 
-        for i in statusDefeito[1]:
-            if i == "DESBALANCEAMENTO":
-                linha = "28"
-            elif i == "DESALINHAMENTO":
-                linha = "29"
-            elif i == "FOLGAS" or i == "FOLGA":
-                linha = "30"
-            elif i == "BASE":
-                linha = "31"
-            elif i == "LUBRIFICAÇÃO":
-                linha = "32"
-            elif i == "ROLAMENTO":
-                linha = "33"
-            elif i == "OUTROS":
-                linha = "34"
-        pagina[f"{coluna}{linha}"].value += 1
+def EXCEL_arrumarTabela_2(pagina, valores):
+    print(f"🛠 -> Adicionando falhas identificadas ao gráfico...")
+    count = 1
+    for i in range(0, len(valores)):
+        for j in valores[i][1]:
+            pagina[f'J{count}'].value = ""
+            pagina[f'K{count}'].value = ""
+            pagina[f'J{count}'].value = valores[i][0]
+            pagina[f'K{count}'].value = j.capitalize()
+            count += 1
+    print(f"🛠 -> Falhas identificadas adicionadas ao gráfico!")
 
-def arrumarTabela_3(pagina):
+def EXCEL_arrumarTabela_3(pagina):
+    print(f"🛠 -> Adicionando gráfico de tendência...")
     if not pagina['N47'].value:
         substCelulaTBL3(pagina, "N")
         return
@@ -72,3 +57,18 @@ def retornarMesAno(data_original):
     data_obj = datetime.datetime.strptime(data_original, "%d/%m/%Y")
     data_formatada = data_obj.strftime("%b/%Y")
     return data_formatada
+
+def EXCEL_corrigirFormulas(planilhagraficos):
+    print(f"🛠 -> Corrigindo formulas EXCEL...")
+    planilhagraficos['N8'] = '=COUNTIF(Listagem!$E:$E, Gráficos!M8)'
+    planilhagraficos['N9'] = '=COUNTIF(Listagem!$E:$E, Gráficos!M9)'
+    planilhagraficos['N10'] = '=COUNTIF(Listagem!$E:$E, Gráficos!M10)'
+    planilhagraficos['N11'] = '=COUNTIF(Listagem!$E:$E, Gráficos!M11)'
+    planilhagraficos['N12'] = '=COUNTIF(Listagem!$E:$E, Gráficos!M12)'
+    
+    colunas = ["N", "O", "P"]
+    for col in colunas:
+        for i in range(28, 34):
+            planilhagraficos[f"{col}{i}"] = f"=COUNTIFS(Listagem!$J:$J, Gráficos!${col}$27, Listagem!$K:$K, Gráficos!$M{i})"
+    
+    print(f"✔ -> Formulas corrigidas!")
